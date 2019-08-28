@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+    
+    <classPathEntry location="/Applications/Eclipse.app/Contents/MacOS/~/.m2/repository//mysql/mysql-connector-java/8.0.13/mysql-connector-java-8.0.13.jar"/>
+    <!-- <classPathEntry location="/Applications/Eclipse.app/Contents/MacOS/~/.m2/repository//mysql/mysql-connector-java/5.1.46/mysql-connector-java-5.1.46.jar"/>
+     -->
+    <context id="mysql" defaultModelType="flat">
+
+        <commentGenerator>
+            <property name="suppressAllComments"  value="true"/>
+        </commentGenerator>
+
+        <!-- jdbc连接 -->
+<!--         <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/arch"
+                        userId="arch" password="arch123"/> -->
+
+        <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
+                        connectionURL="jdbc:mysql://172.18.125.126:3306/arch"
+                        userId="arch" password="arch123" >
+            <property name="nullCatalogMeansCurrent" value="true"/>
+        </jdbcConnection>
+
+        <!-- 生成实体类 -->
+        <javaModelGenerator targetPackage="org.springbootlearning.api.dao.entity3"
+                            targetProject="springbootlearning-api">
+            <property name="enableSubPackages" value="true"/>
+            <property name="trimStrings" value="false"/>
+         </javaModelGenerator>
+
+        <!-- 生成maper.xml文件 -->
+<!--         <sqlMapGenerator targetPackage="org.springbootlearning.api.dao.mapper"
+                         targetProject="springbootlearning-api">
+            <property name="enableSubPackages" value="false"/>
+        </sqlMapGenerator> -->
+
+        <!-- 生成dao接口 -->
+        <javaClientGenerator targetPackage="org.springbootlearning.api.dao.mapper3"
+                             targetProject="springbootlearning-api" type="ANNOTATEDMAPPER">
+            <property name="enableSubPackages" value="true"/>
+        </javaClientGenerator>
+
+        <!-- 配置表信息,不生成帮助类examples-->
+        <table schema="" tableName="t_arch_user_base_info" domainObjectName="TaArUserBaseInfoDO"
+               enableSelectByPrimaryKey="true" enableUpdateByPrimaryKey="true" enableDeleteByPrimaryKey="true"
+               enableCountByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" enableUpdateByExample="false"/>
+    </context>
+
+</generatorConfiguration>

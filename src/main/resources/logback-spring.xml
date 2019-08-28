@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false" scanPeriod="60 seconds" debug="false">
+<!--
+    <springProperty scope="context" name="logDir" source="template.logbacklog.dir"/> 
+    <springProperty scope="context" name="logLevel" source="template.logbacklog.level"/>
+    <property name="log_dir" value="${logDir}/" />
+    <property name="log_level" value="${logLevel}" />
+-->   
+    <property name="log_history_day" value="100" />
+    <property name="log_history_day_1000" value="1000" />
+    <property name="log_history_hour" value="1000" />
+    <property name="log_dir" value="@springboot-learing.logbacklog.dir@/" />
+    <property name="log_level" value="@springboot-learing.logbacklog.level@" />
+    <property name="log_pattern" value="%d{MM-dd HH:mm:ss} [%thread] %-5level [%logger.%M %line] - %msg%n%ex" />
+
+    <appender name="all" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <file>${log_dir}all.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log_dir}all.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>${log_history_day}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoder 默认配置为PatternLayoutEncoder -->
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${log_dir}debug.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log_dir}debug.log.%d{yyyy-MM-dd-HH}</fileNamePattern>
+            <maxHistory>${log_history_hour}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${log_dir}info.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log_dir}info.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>${log_history_day}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="warn" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${log_dir}warn.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log_dir}warn.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>${log_history_day}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+<!--            <immediateFlush>false</immediateFlush> -->
+        </encoder>
+    </appender>
+
+    <appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${log_dir}error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log_dir}error.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>${log_history_day}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>    
+
+    <appender name="ioLoggerInfo" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${log_dir}io/info.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log_dir}io/info.log.%d{yyyy-MM-dd-HH}</fileNamePattern>
+            <maxHistory>${log_history_hour}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+        
+    <logger name="org.springbootlearning.api" level="${log_level}" additivity="false">
+        <appender-ref ref="debug" />
+        <appender-ref ref="info" />
+        <appender-ref ref="warn" />
+        <appender-ref ref="error" />
+    </logger>
+ 
+    <logger name="ioLogger" level="INFO" additivity="false">
+        <appender-ref ref="ioLoggerInfo" />
+    </logger>
+
+    <root level="${log_level}">
+        <appender-ref ref="all" />
+    </root>
+
+</configuration>
