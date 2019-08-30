@@ -33,10 +33,10 @@ includeFilters = @Filter(type = FilterType.REGEX, pattern = "org\\.springbootlea
 //includeFilters = @Filter(type = FilterType.CUSTOM, classes = {FilterCustom.class}),
 useDefaultFilters = true //使用includeFilters时，要将useDefaultFilters设置为false，否则会扫描并添加默认组件
 )
-public class TemplateApplicationBootStrap {
+public class SpringbootApplicationBootStrap {
 
     public static void main(String[] args) {
-        SpringApplication.run(TemplateApplicationBootStrap.class, args);
+        SpringApplication.run(SpringbootApplicationBootStrap.class, args);
         System.out.println("springbootlearing api started at ["+DateUtils.formatToStandardTimeStringNow()+"]");
     }
     

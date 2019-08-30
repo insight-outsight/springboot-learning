@@ -3,19 +3,16 @@
  */
 package org.springbootlearning.api.service;
 
-import static org.junit.Assert.fail;
-
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import javax.annotation.Resource;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.ootb.espresso.facilities.JacksonJSONUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.ListOperations;
@@ -24,6 +21,7 @@ import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.google.common.collect.Lists;
@@ -45,6 +43,10 @@ public class StringRedisTemplateTest {
     
     @Autowired
     private RedisTemplate<String, Bread> tRedisTemplate;
+    
+    @Qualifier("tRedisTemplate")
+    @Autowired
+    private RedisTemplate<String, Map> mapRedisTemplate;
     
     @Autowired
     private ValueOperations<String,String> valueOperations;
@@ -128,5 +130,85 @@ public class StringRedisTemplateTest {
         System.out.println(listOperations.range("l_k11",0,-1));
     }
     
+    @Autowired
+    DefaultRedisScript<List> defaultRedisScript;
+    
+    @Test
+    public void testLuaScript() {
+        System.out.println(tRedisTemplate);
+        System.out.println(mapRedisTemplate);
+        /**
+        /**
+         * List设置lua的KEYS
+         */
+        List<String> keyList = new ArrayList<String>();
+        keyList.add("count");
+        keyList.add("rate.limiting:127.0.0.1");
+        
+        /**
+         * 用Map设置Lua的ARGV[1]
+         */
+        Map<String, Object> argvMap = new HashMap<String, Object>();
+        argvMap.put("expire", 10000);
+        argvMap.put("times", 10);
+        
+        defaultRedisScript.setScriptText(
+                "local key1 = KEYS[1];"
+                + "local key2 = KEYS[2];"
+                + "local receive_arg_json =  cjson.decode(ARGV[1]);"
+                + "local expire = receive_arg_json.expire;"
+                + "local times = receive_arg_json.times;"
+                + "return {expire,'omg',times}");
+        
+        List<?> result = stringRedisTemplate.execute(defaultRedisScript, keyList, JacksonJSONUtils.toJSON(argvMap));
+
+        System.out.println(result);
+        
+        //可以获取脚本SHA1
+        System.out.println(defaultRedisScript.getSha1());
+//        若是出现序列化问题，可以指定序列化方式。
+//        public <T> T execute(RedisScript<T> script, RedisSerializer<?> argsSerializer, RedisSerializer<T> resultSerializer,
+//                List<K> keys, Object... args) {
+//            return scriptExecutor.execute(script, argsSerializer, resultSerializer, keys, args);
+//        }
+    }
+    
+    
+    @Test
+    public void testLuaScript1() {
+       
+        List<String> keyList = new ArrayList<String>();
+        keyList.add("user:1");
+        keyList.add("user:2");
+        
+        defaultRedisScript.setScriptText(
+                "local rst={}; for i,v in pairs(KEYS) do rst[i]=redis.call('hgetall', v) end; return rst");
+
+        List<?> result = stringRedisTemplate.execute(defaultRedisScript, keyList);
+        
+        System.out.println(result);
+        System.out.println(defaultRedisScript.getSha1());
+
+        
+    }
+    
+    @Test
+    public void testLuaScript2() {
+        
+        List<String> keyList = new ArrayList<String>();
+        keyList.add("key:11");
+        keyList.add("key:22");
+        keyList.add("key:33");
+        
+        defaultRedisScript.setScriptText(
+                "local ret0={};ret0[1]=redis.call('lpush',KEYS[1],ARGV[1]);ret0[2]=redis.call('set',KEYS[2],ARGV[2]);ret0[3]=redis.call('set',KEYS[3],ARGV[3]);return ret0");
+        
+        List<?> result = stringRedisTemplate.execute(defaultRedisScript, keyList, "v1112", "v2223", "v3334");
+        
+        System.out.println(result);
+        System.out.println(defaultRedisScript.getSha1());
+        
+        
+    }
 
 }
