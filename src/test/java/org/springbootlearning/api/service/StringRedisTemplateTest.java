@@ -74,13 +74,12 @@ public class StringRedisTemplateTest {
     
     @Test
     public void testStringSet() {
-        stringRedisTemplate.opsForValue().set("srt_k2", "srt_value2");
+        stringRedisTemplate.opsForValue().set("srt_k2", "srt_value234");
     }
     
     @Test
     public void testStringGet() {
         System.out.println(stringRedisTemplate.opsForValue().get("srt_k2"));
-
     }
     
     @Test
@@ -203,10 +202,10 @@ public class StringRedisTemplateTest {
         defaultRedisScript.setScriptText(
                 "local ret0={};ret0[1]=redis.call('lpush',KEYS[1],ARGV[1]);ret0[2]=redis.call('set',KEYS[2],ARGV[2]);ret0[3]=redis.call('set',KEYS[3],ARGV[3]);return ret0");
         
-        List<?> result = stringRedisTemplate.execute(defaultRedisScript, keyList, "v1112", "v2223", "v3334");
+        List<?> result = stringRedisTemplate.execute(defaultRedisScript, keyList, "v11123", "v22234", "v33345");
         
         System.out.println(result);
-        System.out.println(defaultRedisScript.getSha1());
+//        System.out.println(defaultRedisScript.getSha1());
         
         
     }

@@ -11,9 +11,9 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.scripting.support.ResourceScriptSource;
 
 @Configuration
-public class RedisConfig {
+public class RedisLuaScriptConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(RedisLuaScriptConfig.class);
 
     @Bean
     public DefaultRedisScript<List> defaultRedisScript() {

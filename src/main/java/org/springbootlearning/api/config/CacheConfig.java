@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Caffeine;
+
+import redis.clients.jedis.JedisPoolConfig;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
@@ -15,7 +19,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -157,6 +166,49 @@ public class CacheConfig extends CachingConfigurerSupport {
         
     }
     
+    @Value("${spring.redis.host}")
+    private String host;
+    @Value("${spring.redis.port}")
+    private int port;
+    @Value("${spring.redis.database}")
+    private int database;
+    @Value("#{'${spring.redis.timeout}'.substring(0,'${spring.redis.timeout}'.indexOf('ms'))}")
+    private String timeout;
+    @Value("${spring.redis.jedis.pool.max-idle}")
+    private int maxIdle;
+    @Value("${spring.redis.jedis.pool.min-idle}")
+    private int minIdle;
+    @Value("#{'${spring.redis.jedis.pool.max-wait}'.substring(0,'${spring.redis.jedis.pool.max-wait}'.indexOf('ms'))}")
+    private long maxWaitMillis;
+    @Value("${spring.redis.jedis.pool.max-active}")
+    private int maxActive;
+    
+    @Bean
+    @Primary
+    public RedisConnectionFactory connectionFactory() {
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxTotal(maxActive);
+        jedisPoolConfig.setMaxWaitMillis(maxWaitMillis);
+        jedisPoolConfig.setMaxIdle(maxIdle);
+        jedisPoolConfig.setMinIdle(minIdle);
+
+        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
+        redisStandaloneConfiguration.setDatabase(database);
+        redisStandaloneConfiguration.setHostName(host);
+        redisStandaloneConfiguration.setPort(port);
+//        RedisPassword password = RedisPassword.of("123456");
+//        configuration.setPassword(password);
+        //获得默认的连接池构造
+        //这里需要注意的是，jedisConnectionFactoryJ对于Standalone模式的没有（RedisStandaloneConfiguration，JedisPoolConfig）的构造函数，对此
+        //我们用JedisClientConfiguration接口的builder方法实例化一个构造器，还得类型转换
+        JedisClientConfiguration.JedisPoolingClientConfigurationBuilder jpcf = (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
+        //修改我们的连接池配置
+        jpcf.poolConfig(jedisPoolConfig);
+        //通过构造器来构造jedis客户端配置
+        JedisClientConfiguration jedisClientConfiguration = jpcf.build();
+ 
+        return new JedisConnectionFactory(redisStandaloneConfiguration, jedisClientConfiguration);
+    }
     
     @Bean("redisTemplate")
     public RedisTemplate<String, String> stringRedisTemplate(RedisConnectionFactory connectionFactory) {
