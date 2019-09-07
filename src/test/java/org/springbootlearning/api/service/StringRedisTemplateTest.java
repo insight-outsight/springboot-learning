@@ -26,6 +26,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.google.common.collect.Lists;
 
+import redis.clients.jedis.JedisCluster;
+
 /**
  * @author admin
  *
@@ -47,6 +49,13 @@ public class StringRedisTemplateTest {
     @Qualifier("tRedisTemplate")
     @Autowired
     private RedisTemplate<String, Map> mapRedisTemplate;
+    
+    @Autowired
+    private JedisCluster jedisCluster;
+    
+    @Qualifier("tRedisClusterTemplate")
+    @Autowired
+    private RedisTemplate<String, String> redisClusterTemplate;
     
     @Autowired
     private ValueOperations<String,String> valueOperations;
@@ -208,6 +217,16 @@ public class StringRedisTemplateTest {
 //        System.out.println(defaultRedisScript.getSha1());
         
         
+    }
+    
+    @Test
+    public void testRedisClusterSet() {
+        redisClusterTemplate.opsForValue().set("srt_k2", "srt_value23457");
+    }
+    
+    @Test
+    public void testJedisClusterSet() {
+        jedisCluster.set("srt_k22", "srt_value22");
     }
 
 }

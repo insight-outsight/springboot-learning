@@ -24,6 +24,7 @@ import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration.JedisClientConfigurationBuilder;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -198,15 +199,19 @@ public class CacheConfig extends CachingConfigurerSupport {
         redisStandaloneConfiguration.setPort(port);
 //        RedisPassword password = RedisPassword.of("123456");
 //        configuration.setPassword(password);
-        //获得默认的连接池构造
-        //这里需要注意的是，jedisConnectionFactoryJ对于Standalone模式的没有（RedisStandaloneConfiguration，JedisPoolConfig）的构造函数，对此
-        //我们用JedisClientConfiguration接口的builder方法实例化一个构造器，还得类型转换
-        JedisClientConfiguration.JedisPoolingClientConfigurationBuilder jpcf = (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
-        //修改我们的连接池配置
-        jpcf.poolConfig(jedisPoolConfig);
-        //通过构造器来构造jedis客户端配置
-        JedisClientConfiguration jedisClientConfiguration = jpcf.build();
- 
+//        //获得默认的连接池构造
+//        //这里需要注意的是，jedisConnectionFactoryJ对于Standalone模式的没有（RedisStandaloneConfiguration，JedisPoolConfig）的构造函数，对此
+//        //我们用JedisClientConfiguration接口的builder方法实例化一个构造器，还得类型转换
+//        JedisClientConfiguration.JedisPoolingClientConfigurationBuilder jpcf = (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
+//        //修改我们的连接池配置
+//        jpcf.poolConfig(jedisPoolConfig);
+//        //通过构造器来构造jedis客户端配置
+//        JedisClientConfiguration jedisClientConfiguration = jpcf.build();
+
+        JedisClientConfigurationBuilder builder = JedisClientConfiguration.builder();
+        builder.usePooling().poolConfig(jedisPoolConfig);
+        JedisClientConfiguration jedisClientConfiguration = builder.build();
+        
         return new JedisConnectionFactory(redisStandaloneConfiguration, jedisClientConfiguration);
     }
     
