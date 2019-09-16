@@ -23,4 +23,6 @@
         <constructor-arg ref="restTemplate"></constructor-arg>
     </bean> -->
 
+<!--     <import resource="classpath:spring/applicationContext-es.xml" /> -->
+
 </beans>

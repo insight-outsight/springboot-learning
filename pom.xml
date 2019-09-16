@@ -9,6 +9,8 @@
     <properties>
         <!--从spring-boot-starter-parent 2.1.5.RELEASE开始其maven插件升级到了3.1.2，有些IDE插件不兼容POM会报Unknown错误。 -->
         <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+        <elasticsearch.version>7.3.1</elasticsearch.version>
+        
     </properties>
 
     <parent>
@@ -39,6 +41,55 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
        </dependency>
+       <!-- 
+       java 客户端使用 es 官方的 high level client,
+       官方文档https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high.html),
+       为什么用这个有以下几点原因：
+
+       jest 毕竟不是官方的，更新速度较慢
+       transportClient,速度太慢，业务压测发现TransportClient存在并发瓶颈。连官方都嫌弃它了。在 7.x 中已经被弃用，8.x 中将完全删除
+       high level client 的官方文档写的很清楚明了，虽然目前相关的中文资料还很少，也能够上手用起来
+
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>7.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>transport</artifactId>
+            <version>7.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.plugin</groupId>
+            <artifactId>transport-netty4-client</artifactId>
+            <version>7.3.1</version>
+        </dependency>
+         -->
+       
+            <!-- The high-level Java REST client -->
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>7.3.1</version>
+            </dependency>
+<!--         <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>transport</artifactId>
+            <version>7.3.1</version>
+        </dependency> -->
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>7.3.1</version>
+            </dependency>
+            <!-- The low-level Java REST  --> 
+<!--             <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-client</artifactId>
+                <version>7.3.1</version>
+            </dependency> -->
+        
     </dependencies>
     
     <build>
