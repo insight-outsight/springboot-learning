@@ -174,7 +174,7 @@ public class CacheConfig extends CachingConfigurerSupport {
     @Value("${spring.redis.database}")
     private int database;
     @Value("#{'${spring.redis.timeout}'.substring(0,'${spring.redis.timeout}'.indexOf('ms'))}")
-    private String timeout;
+    private long timeout;
     @Value("${spring.redis.jedis.pool.max-idle}")
     private int maxIdle;
     @Value("${spring.redis.jedis.pool.min-idle}")
@@ -209,11 +209,36 @@ public class CacheConfig extends CachingConfigurerSupport {
 //        JedisClientConfiguration jedisClientConfiguration = jpcf.build();
 
         JedisClientConfigurationBuilder builder = JedisClientConfiguration.builder();
-        builder.usePooling().poolConfig(jedisPoolConfig);
+        builder.usePooling().poolConfig(jedisPoolConfig).and().readTimeout(Duration.ofMillis(timeout));
+        /**
+         * 
+        if (spring.redis.ssl=false){
+            jedisClientConfiguration = JedisClientConfiguration.builder().usePooling().
+                    poolConfig(poolConfig).and().
+                    readTimeout(Duration.ofMillis(spring.redis.connTimeout=5000ms)).useSsl()
+                    .build();
+        }else {
+            jedisClientConfiguration = JedisClientConfiguration.builder().usePooling().
+                    poolConfig(poolConfig).and().
+                    readTimeout(Duration.ofMillis(redisProperties.getConnTimeout())).build();
+        }
+         */
         JedisClientConfiguration jedisClientConfiguration = builder.build();
         
         return new JedisConnectionFactory(redisStandaloneConfiguration, jedisClientConfiguration);
     }
+    
+//    @Bean
+//    public JedisPool generateJedisPoolFactory() {
+//        JedisPoolConfig poolConfig = new JedisPoolConfig();
+//        poolConfig.setMaxTotal(maxActive);
+//        poolConfig.setMaxIdle(maxIdle);
+//        poolConfig.setMinIdle(minIdle);
+//        poolConfig.setMaxWaitMillis(maxWaitMillis);
+//        JedisPool jedisPool = new JedisPool(poolConfig, host, port, timeout, password);
+//        return jedisPool;
+//    }
+    
     
     @Bean("redisTemplate")
     public RedisTemplate<String, String> stringRedisTemplate(RedisConnectionFactory connectionFactory) {

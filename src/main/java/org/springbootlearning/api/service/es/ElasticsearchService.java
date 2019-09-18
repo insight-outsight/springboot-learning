@@ -2,9 +2,12 @@ package org.springbootlearning.api.service.es;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +25,8 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -31,12 +36,20 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.ootb.espresso.facilities.JacksonJSONUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springbootlearning.api.service.util.UnderlineCamelcaseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.NumberUtils;
+
+import com.google.common.collect.Maps;
 
 @Service
 public class ElasticsearchService<T extends ESEntity> {
@@ -46,7 +59,7 @@ public class ElasticsearchService<T extends ESEntity> {
     @Autowired
     private RestHighLevelClient restHighLevelClient;
     
-    public boolean indexExist(String index) throws Exception {
+    public boolean existsIndex(String index) throws Exception {
         GetIndexRequest request = new GetIndexRequest(index);
         request.local(false);
         request.humanReadable(true);
@@ -94,7 +107,6 @@ public class ElasticsearchService<T extends ESEntity> {
     public void deleteIndex(String index) throws Exception {
         restHighLevelClient.indices().delete(new DeleteIndexRequest(index), RequestOptions.DEFAULT);
     }
-    
     
     public boolean exists(String index,String id) throws IOException {
         /**
@@ -152,7 +164,9 @@ public class ElasticsearchService<T extends ESEntity> {
 //        request.type("_doc");
         request.setRefreshPolicy(RefreshPolicy.NONE);
         //文档源以字符串形式提供。
-        request.source(JacksonJSONUtils.toJSON(esEntity), XContentType.JSON);
+        String jsonStr = JacksonJSONUtils.toJSON(esEntity);
+        request.source(jsonStr, XContentType.JSON);
+        logger.debug("es insert or update document jsonStr:{}",jsonStr);
         /**
          * 还可以以不同的方式提供文档源：
             Map<String, Object> jsonMap = new HashMap<>();
@@ -236,6 +250,7 @@ public class ElasticsearchService<T extends ESEntity> {
                 引发的异常表示返回了版本冲突错误。
              */
             if(StringUtils.isNotBlank(indexResponse.getId()) && indexResponse.getResult() != null) {
+                //indexResponse.getResult().name() is CREATED or UPDATED
                 logger.debug("es insert or update document id:{},result name:{}",indexResponse.getId(),indexResponse.getResult().name());
                 return true;
             }
@@ -327,7 +342,7 @@ public class ElasticsearchService<T extends ESEntity> {
          
          GetRequest request = new GetRequest(index, esEntity.getId());
          //禁用源检索，默认情况下启用
-         request.fetchSourceContext(FetchSourceContext.DO_NOT_FETCH_SOURCE);
+//         request.fetchSourceContext(FetchSourceContext.DO_NOT_FETCH_SOURCE);
 
 //         //为特定字段配置源包含
 //         String[] includes = new String[]{"message", "*Date"};
@@ -368,28 +383,15 @@ public class ElasticsearchService<T extends ESEntity> {
 //             long version = getResponse.getVersion();
              String sourceAsString = getResponse.getSourceAsString();        
              logger.debug("get document sourceAsString:{}",sourceAsString);
-             Map<String, Object> sourceAsMap = getResponse.getSourceAsMap(); 
-             T result = cls.newInstance();
-             Field [] fields = cls.getDeclaredFields();
-             for(Field f:fields){
-                 f.setAccessible(true);
-                 try {
-                     if(sourceAsMap.get(f.getName())!=null 
-                             && f.getType().isAssignableFrom(sourceAsMap.get(f.getName()).getClass())) {
-                         f.set(result, sourceAsMap.get(f.getName()));
-                     }
-                 } catch (Exception e) {
-                     logger.error("",e);
-                     throw e;
-                 }
-             }
-//                 byte[] sourceAsBytes = getResponse.getSourceAsBytes();  
+             T result = parseToEntityFromMap(getResponse.getSourceAsMap(), cls);
+             result.setId(getResponse.getId());
+             result.setRoutingKey(esEntity.getRoutingKey());
+//             byte[] sourceAsBytes = getResponse.getSourceAsBytes();  
 //             String message = getResponse.getField("message").getValue();
              return result;
          } else {
              return null;
          }
-
 
           /**
             以字符串形式检索文档。
@@ -449,56 +451,100 @@ public class ElasticsearchService<T extends ESEntity> {
             返回的GetResponse允许检索所请求的文档及其元数据和最终存储的字段。
           */
      }
+
+    private T parseToEntityFromMap(Map<String, Object> sourceAsMap, Class<T> cls)
+            throws Exception {
+         T result = cls.newInstance();
+         Field [] fields = cls.getDeclaredFields();
+         for(Field f:fields) {
+             f.setAccessible(true);
+             Object mapFieldObject = sourceAsMap.get(UnderlineCamelcaseUtils.humpToLine2(f.getName()));
+             try {
+                 if(mapFieldObject != null ) {
+                     if(f.getType() == Long.class) {
+                         if(mapFieldObject.getClass() == Long.class || mapFieldObject.getClass() == Integer.class) {
+                             f.set(result, Long.valueOf(mapFieldObject+""));
+                             logger.debug("fieldName:{},fieldClass:{},mapFieldObjectClass:{},mapFieldObject:{}",
+                                     f.getName(),f.getType(),mapFieldObject.getClass(),mapFieldObject);
+                         }
+                     }
+                     else {
+                         if (f.getType().isAssignableFrom(mapFieldObject.getClass())){
+                             f.set(result, mapFieldObject);
+                             logger.debug("fieldName:{},fieldClass:{},mapFieldObjectClass:{},mapFieldObject:{}",
+                                     f.getName(),f.getType(),mapFieldObject.getClass(),mapFieldObject);
+                         }
+                     }
+                 }
+             } catch (Exception e) {
+                 logger.error("",e);
+                 throw e;
+             }
+         }
+        return result;
+    }
      
-//    
-//    public <T> void deleteBatch(String index, Collection<T> idList) {
-//        BulkRequest request = new BulkRequest();
-//        idList.forEach(item -> request.add(new DeleteRequest(index, item.toString())));
-//        try {
-//            client.bulk(request, RequestOptions.DEFAULT);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//    
-    /**
-     * SearchRequest searchRequest = new SearchRequest("gdp_tops*");
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.query(QueryBuilders.termQuery("city", "北京市"));
-        sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
-        searchRequest.source(sourceBuilder);
-        try {
-            SearchResponse response = highLevelClient.search(searchRequest);
-            Arrays.stream(response.getHits().getHits())
-                    .forEach(i -> {
-                        System.out.println(i.getIndex());
-                        System.out.println(i.getSource());
-                        System.out.println(i.getType());
-                    });
-            System.out.println(response.getHits().totalHits);
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+    public List<T> searchByEntityFields(String index, T esEntity, List<String> fieldNameList, Class<T> cls) throws Exception {
+//        SearchRequest searchRequest = new SearchRequest("gdp_tops*");
+        SearchRequest searchRequest = new SearchRequest(index);
+        if(StringUtils.isNotBlank(esEntity.getRoutingKey())) {
+            searchRequest.routing(esEntity.getRoutingKey());
         }
-     */
-//    public <T> List<T> search(String index, SearchSourceBuilder builder, Class<T> c) {
-//        SearchRequest request = new SearchRequest(index);
-//        request.source(builder);
-//        try {
-//            SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-//            SearchHit[] hits = response.getHits().getHits();
-//            List<T> res = new ArrayList<>(hits.length);
-//            for (SearchHit hit : hits) {
-//                res.add(JSON.parseObject(hit.getSourceAsString(), c));
-//            }
-//            return res;
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//        Map<String, Object> queryMap = Maps.newHashMap();
+//        queryMap.put("s_id", sId);
+//        queryMap.put("o_id", oId);
+        BoolQueryBuilder boolBuilder = QueryBuilders.boolQuery();
+        
+        for(String fieldName : fieldNameList) {
+            boolBuilder.must(QueryBuilders.matchQuery(UnderlineCamelcaseUtils.humpToLine2(fieldName), getFieldValue(esEntity,esEntity.getClass(),fieldName)));
+        }
+
+        searchSourceBuilder.query(boolBuilder);
+//        searchSourceBuilder.query(QueryBuilders.termQuery("city", "北京市"));
+        searchSourceBuilder.timeout(new TimeValue(3, TimeUnit.SECONDS));
+        searchRequest.source(searchSourceBuilder);
+        try {
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            logger.debug("hits:{}", searchResponse.getHits().getHits().length);
+
+            Arrays.stream(hits).forEach(i -> {
+                logger.debug("search result index:{},sourceAsString:{}", 
+                        i.getIndex(),i.getSourceAsString());
+            });
+            
+            List<T> resultList = new ArrayList<>(hits.length);
+            for (SearchHit hit : hits) {
+                T result = parseToEntityFromMap(hit.getSourceAsMap(),cls);
+                result.setId(hit.getId());
+                result.setRoutingKey(esEntity.getRoutingKey());
+                resultList.add(result);
+            }
+            return resultList;
+        } catch (Exception e) {
+            logger.error("",e);
+            throw e;
+        }
+    }
      
-     /**
+     private Object getFieldValue(T esEntity, Class<? extends ESEntity> cls, String fieldName) throws Exception {
+         Field [] fields = cls.getDeclaredFields();
+         for(Field f:fields) {
+             f.setAccessible(true);
+             if(f.getName().equals(fieldName)) {
+                 try {
+                     return f.get(esEntity);
+                 } catch (Exception e) {
+                     logger.error("",e);
+                     throw e;
+                 }
+             }
+         }
+         return null;
+    }
+
+    /**
       * Integer pageIndex = 1;
         Integer pageSize = 5;
         String indexName = "demo";
@@ -622,11 +668,9 @@ SearchRequest request = new SearchRequest("order");
         }
         request.doc(temp);
         return restHighLevelClient.update(request,RequestOptions.DEFAULT).status().name();
-    
     }
-
     
-     public String deleteOrder(String index, String id){
+     public String delete(String index, String id){
          DeleteRequest request=new DeleteRequest(index,id);
 //         request.routing("routing");
 //         等待主碎片可用的作为TimeValue的超时。
@@ -704,12 +748,12 @@ SearchRequest request = new SearchRequest("order");
                 onFailure — 在整个DeleteRequest失败时调用。
             */
          } catch (IOException e) {
-             e.printStackTrace();
+             logger.error("",e);
          }
- return null;
+         return null;
      }
      
-
+     
 //    public void deleteByQuery(String index, QueryBuilder builder) {
 //        DeleteByQueryRequest request = new DeleteByQueryRequest(index);
 //        request.setQuery(builder);

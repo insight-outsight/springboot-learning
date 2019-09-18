@@ -17,21 +17,27 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "s_id",
+    "s_type",
     "biz_id",
     "biz_type",
     "o_id",
+    "status",
     "m_time"
 })
-public class Weather extends ESEntity{
+public class Counter extends ESEntity{
 
     @JsonProperty("s_id")
-    private Integer sId;
+    private Long sId;
+    @JsonProperty("s_type")
+    private Integer sType;
     @JsonProperty("biz_id")
     private Integer bizId;
     @JsonProperty("biz_type")
     private Integer bizType;
     @JsonProperty("o_id")
     private String oId;
+    @JsonProperty("status")
+    private Integer status;
     @JsonProperty("m_time")
     private Long mTime;
     @JsonIgnore
@@ -43,7 +49,7 @@ public class Weather extends ESEntity{
      *     The sId
      */
     @JsonProperty("s_id")
-    public Integer getSId() {
+    public Long getSId() {
         return sId;
     }
 
@@ -53,10 +59,30 @@ public class Weather extends ESEntity{
      *     The s_id
      */
     @JsonProperty("s_id")
-    public void setSId(Integer sId) {
+    public void setSId(Long sId) {
         this.sId = sId;
     }
 
+    /**
+     * 
+     * @return
+     *     The sType
+     */
+    @JsonProperty("s_type")
+    public Integer getSType() {
+        return sType;
+    }
+
+    /**
+     * 
+     * @param sType
+     *     The s_type
+     */
+    @JsonProperty("s_type")
+    public void setSType(Integer sType) {
+        this.sType = sType;
+    }
+    
     /**
      * 
      * @return
@@ -120,6 +146,26 @@ public class Weather extends ESEntity{
     /**
      * 
      * @return
+     *     The status
+     */
+    @JsonProperty("status")
+    public Integer getStatus() {
+        return status;
+    }
+
+    /**
+     * 
+     * @param status
+     *     The status
+     */
+    @JsonProperty("s_type")
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+    
+    /**
+     * 
+     * @return
      *     The mTime
      */
     @JsonProperty("m_time")
@@ -154,7 +200,7 @@ public class Weather extends ESEntity{
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(sId).append(bizId).append(bizType).append(oId).append(mTime).append(additionalProperties).toHashCode();
+        return new HashCodeBuilder().append(id).append(routingKey).append(sId).append(sType).append(bizId).append(bizType).append(oId).append(status).append(mTime).append(additionalProperties).toHashCode();
     }
 
     @Override
@@ -162,11 +208,11 @@ public class Weather extends ESEntity{
         if (other == this) {
             return true;
         }
-        if ((other instanceof Weather) == false) {
+        if ((other instanceof Counter) == false) {
             return false;
         }
-        Weather rhs = ((Weather) other);
-        return new EqualsBuilder().append(id, rhs.id).append(routingKey, rhs.routingKey).append(sId, rhs.sId).append(bizId, rhs.bizId).append(bizType, rhs.bizType).append(oId, rhs.oId).append(mTime, rhs.mTime).append(additionalProperties, rhs.additionalProperties).isEquals();
+        Counter rhs = ((Counter) other);
+        return new EqualsBuilder().append(id, rhs.id).append(routingKey, rhs.routingKey).append(sId, rhs.sId).append(sType, rhs.sType).append(bizId, rhs.bizId).append(bizType, rhs.bizType).append(oId, rhs.oId).append(status, rhs.status).append(mTime, rhs.mTime).append(additionalProperties, rhs.additionalProperties).isEquals();
     }
 
 }

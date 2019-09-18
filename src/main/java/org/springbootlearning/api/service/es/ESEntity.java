@@ -6,6 +6,7 @@ public abstract class ESEntity {
 
     @JsonIgnore
     protected String id;
+    @JsonIgnore
     protected String routingKey;
 
     public String getId() {
