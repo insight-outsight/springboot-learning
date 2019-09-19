@@ -94,8 +94,8 @@ public class StringRedisTemplateTest {
     @Test
     public void testObjectSet() {
         Bread bread = new Bread();
-        bread.setMadeIn("Italy");
-        bread.setName("BlackBread");
+        bread.setMadeIn("Italy-2");
+        bread.setName("BlackBread-2");
         tRedisTemplate.opsForValue().set("o_k2", bread);
     }
     

@@ -9,8 +9,8 @@
     <properties>
         <!--从spring-boot-starter-parent 2.1.5.RELEASE开始其maven插件升级到了3.1.2，有些IDE插件不兼容POM会报Unknown错误。 -->
         <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+        <!-- 不加这个属性配置elasticsearch high level client 报错 -->
         <elasticsearch.version>7.3.1</elasticsearch.version>
-        
     </properties>
 
     <parent>
