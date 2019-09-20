@@ -1,6 +1,12 @@
 package org.springbootlearning.api.config;
 
+import javax.annotation.PreDestroy;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springbootlearning.api.constant.RedisMessageConstants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.Message;
@@ -10,17 +16,18 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.stereotype.Component;
 
 @Configuration
-public class RedisMessageListenerConfig {
+public class RedisMessageSubscriberConfig {
 
     @Bean
-    RedisMessageListenerContainer container(RedisConnectionFactory connectionFactory,
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory,
             MessageListenerAdapter listenerAdapter) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-        container.addMessageListener(listenerAdapter, new ChannelTopic("testrp1"));
+//        container.addMessageListener(listenerAdapter, new ChannelTopic(RedisMessageConstants.SUBSCRIBED_CHANNEL_TOPIC_TESTRP1));
         //这个container 可以添加多个 messageListener
 //        container.addMessageListener(listenerAdapter, new PatternTopic("testkafka1"));// 配置要订阅的订阅项
         return container;
@@ -28,23 +35,31 @@ public class RedisMessageListenerConfig {
 
     /**
      * 使用MessageListenerAdapter方式
-     * @author xuzhengchao
+     * @author 
      *
      */
     @Component
     public class RedisSubscriber extends MessageListenerAdapter {
 
+        private Logger logger = LoggerFactory.getLogger(RedisSubscriber.class);
+        
         @Autowired
         private RedisTemplate<String, String> redisTemplate;
 
         @Override
-        public void onMessage(Message message, byte[] bytes) {
-            System.out.println(message);
-            byte[] body = message.getBody();
-            byte[] channel = message.getChannel();
-            String msg = redisTemplate.getStringSerializer().deserialize(body);
-            String topic = redisTemplate.getStringSerializer().deserialize(channel);
-            System.out.println("监听到topic为[" + topic + "]的消息：" + msg);
+        public void onMessage(Message message, byte[] pattern) {
+            try {
+                String channel = new String(message.getChannel());
+                String body = new String(message.getBody());
+                logger.debug("receive redis published message channel:{},body:{}",channel,body);
+                if(RedisMessageConstants.SUBSCRIBED_CHANNEL_TOPIC_TESTRP1.equals(channel)) {
+                    String topic = redisTemplate.getStringSerializer().deserialize(message.getChannel());
+                    String msg = redisTemplate.getStringSerializer().deserialize(message.getBody());
+                    System.out.println("监听到topic为[" + topic + "]的消息：" + msg);
+                }
+            } catch (Exception e) {
+                logger.error("",e);
+            }
         }
 
     }
