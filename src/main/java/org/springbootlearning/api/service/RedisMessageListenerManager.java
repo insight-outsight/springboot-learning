@@ -26,13 +26,13 @@ public class RedisMessageListenerManager {
     @PostConstruct
     public void addMessageListener() {
         redisMessageListenerContainer.addMessageListener(listenerAdapter, new ChannelTopic(RedisMessageConstants.SUBSCRIBED_CHANNEL_TOPIC_TESTRP1));
-        logger.info("added redis message listenerr");
+        logger.info("added redis message listener,channel:{}",RedisMessageConstants.SUBSCRIBED_CHANNEL_TOPIC_TESTRP1);
     }
     
     @PreDestroy
     public void removeMessageListener() {
         redisMessageListenerContainer.removeMessageListener(listenerAdapter);
-        logger.info("removed redis message listenerr");
+        logger.info("removed redis message listener");
     }
     
 }
