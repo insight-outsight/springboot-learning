@@ -42,7 +42,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.ootb.espresso.facilities.JacksonJSONUtils;
-import org.ootb.espresso.facilities.UnderlineCamelcaseUtils;
+import org.ootb.espresso.facilities.converter.UnderlineCamelcaseConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -458,7 +458,7 @@ public class ElasticsearchService<T extends ESEntity> {
          Field [] fields = cls.getDeclaredFields();
          for(Field f:fields) {
              f.setAccessible(true);
-             Object mapFieldObject = sourceAsMap.get(UnderlineCamelcaseUtils.humpToLine2(f.getName()));
+             Object mapFieldObject = sourceAsMap.get(UnderlineCamelcaseConverter.humpToLine2(f.getName()));
              try {
                  if(mapFieldObject != null ) {
                      if(f.getType() == Long.class) {
@@ -497,7 +497,7 @@ public class ElasticsearchService<T extends ESEntity> {
         BoolQueryBuilder boolBuilder = QueryBuilders.boolQuery();
         
         for(String fieldName : fieldNameList) {
-            boolBuilder.must(QueryBuilders.matchQuery(UnderlineCamelcaseUtils.humpToLine2(fieldName), getFieldValue(esEntity,esEntity.getClass(),fieldName)));
+            boolBuilder.must(QueryBuilders.matchQuery(UnderlineCamelcaseConverter.humpToLine2(fieldName), getFieldValue(esEntity,esEntity.getClass(),fieldName)));
         }
 
         searchSourceBuilder.query(boolBuilder);

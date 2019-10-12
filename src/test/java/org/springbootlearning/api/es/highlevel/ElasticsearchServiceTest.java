@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest({"spring.profiles.active=dev"})
-public class ElasticsearchRestClientTest extends BaseServiceTest{
+public class ElasticsearchServiceTest extends BaseServiceTest{
 
     @Autowired
     private ElasticsearchService<Counter> elasticsearchService;
