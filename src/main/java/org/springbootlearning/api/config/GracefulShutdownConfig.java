@@ -94,6 +94,21 @@
 //              builder.setSocketOption(UndertowOptions.BUFFER_PIPELINED_DATA,true);
 //            });
 //            return factory;
+/**
+ * 
+ * server.undertow.accesslog.dir=./logs/access_log  //日志路径
+server.undertow.accesslog.enabled=true //开启accesslog
+server.undertow.accesslog.pattern=%t %a "%r" %s (%D ms) 
+... https://www.cnblogs.com/shareTechnologyl/articles/10757907.html
+也就是说必须要开启这个配置，才能在访问日志里打印响应时间，至于undertow为什么不默认开启这个配置，是因为开启后会对性能造成影响
+在spring boot(2.0)要开启这个配置需要通过代码进行配置:
+        factory.addBuilderCustomizers(new UndertowBuilderCustomizer() {
+            @Override
+            public void customize(Undertow.Builder builder) {
+                builder.setServerOption(UndertowOptions.RECORD_REQUEST_START_TIME, true);
+            }
+        });
+        **/
 //        }
 //    }
 //    
